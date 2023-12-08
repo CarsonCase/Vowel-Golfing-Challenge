@@ -25,8 +25,8 @@ import "forge-std/console.sol";
 * - List the gas cost of your forge test bellow with your name/twitter/email ect.
 * - Post your result on Twitter and tag the challenge @author @SolContractADay.
 *
-* @author Your Name         [YourName@gmail.com]
-* Score:                    []
+* @author Carson Case         [carsonpcase@gmail.com]
+* Score:                      [895,237]
 */
 contract DistanceToNearestVowelV1 {
 
@@ -39,38 +39,40 @@ contract DistanceToNearestVowelV1 {
 
   function algorithm(string memory _str) internal view returns(uint[] memory){
     bytes memory s = bytes(_str);
-    uint[] memory result = new uint[](s.length);
+    uint sLength = s.length;
+    uint[] memory result = new uint[](sLength);
     // i -> the position of currently evaluating character
-    for(uint i; i < s.length; i++){
-      // j -> the position of current potential vowel
-      uint j = i;
-      uint zigZagCount = 1;
-      uint counter = 1;
-      // while character @j != a vowel
-      while(
-        s[j] != 'a' && s[j] != 'e' && s[j] != 'i' && s[j] != 'o' && s[j] != 'u'
-        &&
-        s[j] != 'A' && s[j] != 'E' && s[j] != 'I' && s[j] != 'O' && s[j] != 'U'
-      ){
-        // We need to zig zag relative to i. If i is 5; J must go 4, 6, 3, 7
-        // BUT cannot zig zag < 0 or > length
-        // todo: needs to increase zigZag every OTHER run regardless of if bound is reached
-        if(counter++ %2 == 1){
-          if(i >= zigZagCount){
-            j = i - zigZagCount;
+    for(uint i; i < sLength; ){
+      unchecked {        
+        // j -> the position of current potential vowel
+        uint j = i;
+        uint zigZagCount = 1;
+        uint counter;
+        // while character @j != a vowel
+        while(
+          s[j] != 'a' && s[j] != 'e' && s[j] != 'i' && s[j] != 'o' && s[j] != 'u'
+          &&
+          s[j] != 'A' && s[j] != 'E' && s[j] != 'I' && s[j] != 'O' && s[j] != 'U'
+        ){
+          // We need to zig zag relative to i. If i is 5; J must go 4, 6, 3, 7
+          // BUT cannot zig zag < 0 or > length
+          if(++counter %2 == 1){
+            if(i >= zigZagCount){
+              j = i - zigZagCount;
+            }
+          }else{
+            if (zigZagCount + i < sLength){
+              j = i + zigZagCount;
+            }
+            ++zigZagCount;
           }
-        }else{
-          if (zigZagCount + i < s.length){
-            j = i + zigZagCount;
-          }
-          ++zigZagCount;
         }
+        console.log(i>=j ? i-j: j-i);
+        result[i] = i>=j ? i-j: j-i;
+        ++i;
       }
-      console.log(i>=j ? i-j: j-i);
-      result[i] = i>=j ? i-j: j-i;
     }
     return result;
-
   }
 
   function runTest() external view returns(bool){
