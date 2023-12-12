@@ -26,7 +26,7 @@ import "forge-std/console.sol";
 * - Post your result on Twitter and tag the challenge @author @SolContractADay.
 *
 * @author Carson Case         [carsonpcase@gmail.com]
-* Score:                      [895,237]
+* Score:                      [599,967]
 */
 contract DistanceToNearestVowelV1 {
 
@@ -34,46 +34,141 @@ contract DistanceToNearestVowelV1 {
   uint[] expected = [1, 0, 1, 1, 0, 1, 1, 0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0, 1, 0, 1, 0, 1, 2, 2, 1, 0, 1, 2, 3, 3, 2, 1, 0, 1, 0, 1, 2, 2, 1, 0, 0, 1, 0, 1, 2, 3, 2, 1, 0, 1, 1, 0, 1, 2, 2, 1, 0, 1, 0, 1, 1, 0, 1, 2, 2, 1, 0, 1, 2, 1, 0, 1, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 2, 2, 1, 0, 1, 2, 2, 1, 0, 1, 1, 0, 1, 2, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 2, 2, 1, 0, 0, 1, 1, 0, 1, 2, 2, 1, 0, 1, 1, 0, 1, 2, 1, 0, 1, 1, 0, 1, 2, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 3];
 
   // You may uncomment/modify these for debugging, but do not use these values for your score
-  // string str = "abcdabcd";
-  // uint[] expected = [0,1,2,1,0,1,2,3];
+  // string str = "abbcdabcd";
+  // uint[] expected = [0,1,2,2,1,0,1,2,3];
 
+  /// New algorithm...
+  /**
+   * 
+   * 1. Loop through find 2 vowels indexes as (X, Y)
+   * Ex. "Hello" (X = 1, Y = 4)
+   * 
+   * 2. Find half of the distance between these values as D.
+   * Ex. d = 4 - 1 = 3 | D = d/2 = 1
+   * 
+   * 3. X and Y are 0. For the distance between count up and down after the pivot halfway point, if the haflway value is odd, double the largest count
+   * Ex. "ello" = X -> Y = 0110
+   */
   function algorithm(string memory _str) internal view returns(uint[] memory){
     bytes memory s = bytes(_str);
     uint sLength = s.length;
     uint[] memory result = new uint[](sLength);
-    // i -> the position of currently evaluating character
-    for(uint i; i < sLength; ){
-      unchecked {        
-        // j -> the position of current potential vowel
-        uint j = i;
-        uint zigZagCount = 1;
-        uint counter;
-        // while character @j != a vowel
-        while(
-          s[j] != 'a' && s[j] != 'e' && s[j] != 'i' && s[j] != 'o' && s[j] != 'u'
-          &&
-          s[j] != 'A' && s[j] != 'E' && s[j] != 'I' && s[j] != 'O' && s[j] != 'U'
-        ){
-          // We need to zig zag relative to i. If i is 5; J must go 4, 6, 3, 7
-          // BUT cannot zig zag < 0 or > length
-          if(++counter %2 == 1){
-            if(i >= zigZagCount){
-              j = i - zigZagCount;
-            }
-          }else{
-            if (zigZagCount + i < sLength){
-              j = i + zigZagCount;
-            }
-            ++zigZagCount;
-          }
-        }
-        console.log(i>=j ? i-j: j-i);
-        result[i] = i>=j ? i-j: j-i;
-        ++i;
+    uint x;
+    uint y;
+
+    // first step. If the first character isn't a vowel, count down to the first vowel from the start
+    if(isNotVowel(s[x])){
+      // find the first vowel with y
+      do{
+        ++y;
+      }while(isNotVowel(s[y]));
+
+      // count x down from y until x = y
+      while(x < y){
+        result[x] = y - x;
+        ++x;
       }
     }
+
+    // Do algorithm until we get to the end of the array
+    do{
+      // First find the next y or end of the array
+      do{
+        if(y < sLength-1){
+           ++y;
+        }else{
+          break;
+        }
+      }while(isNotVowel(s[y]));
+      
+      // if y has reached the end of the array, count upwards from the last vowel and break
+      if(y == sLength - 1){
+        uint c;
+        do{
+        result[++x] = ++c;
+        }while(x < y);
+        
+        break;
+      }
+
+      // find distance
+      uint d = y - x;
+      uint D = d/2;
+
+      // set x to 0
+      result[x] = 0;
+
+      // Count all the distance starting from step 1 after x
+      for(uint i=1; i < d; ++i){
+        // if less than, = half distance, count up
+        if(i <= D){
+          result[x+i] = i;
+        // if > half distance count down
+        }else{
+          result[x+i] = result[x+i-1]-1;
+        }
+        // if equal to half distance on an odd distance, place the next element as the same distance
+        if (d % 2 == 1 && i == D){
+          i++;
+          result[x+i] = D;
+        }
+      }
+
+      // next x is this y
+      x = y;
+
+    // end if x becomes the length
+    }while(x < sLength-1);
+
     return result;
   }
+
+  function pyramid(uint numerator, uint denominator) internal pure returns(uint){
+    return numerator < denominator  ? numerator : denominator - (numerator % denominator);
+  }
+  function isNotVowel(bytes1 b) internal pure returns(bool){
+    return !(b == 'a' || b == 'e' || b == 'o' || b == 'i' || b == 'u'
+          || b == 'O' || b == 'E' || b == 'I' || b == 'A' || b == 'U');
+  }
+
+  // function algorithm(string memory _str) internal view returns(uint[] memory){
+  //   bytes memory s = bytes(_str);
+  //   uint sLength = s.length;
+  //   uint[] memory result = new uint[](sLength);
+  //   uint i;
+  //   unchecked{
+  //     // i -> the position of currently evaluating character
+  //     do{
+  //       // j -> the position of current potential vowel
+  //       uint j = i;
+  //       uint zigZagCount = 1;
+  //       uint counter;
+  //       // while character @j != a vowel
+  //       while(
+  //         !(s[j] == 'a' || s[j] == 'e' || s[j] == 'o' || s[j] == 'i' || s[j] == 'u'
+  //         || s[j] == 'O' || s[j] == 'E' || s[j] == 'I' || s[j] == 'A' || s[j] == 'U')
+  //       ){
+  //         // We need to zig zag relative to i. If i is 5; J must go 4, 6, 3, 7
+  //         // BUT cannot zig zag < 0 or > length
+  //         if(++counter %2 == 1){
+  //           if(i >= zigZagCount){
+  //             j = i - zigZagCount;
+  //           }
+
+  //         }else{
+  //           if (zigZagCount + i < sLength){
+  //             j = i + zigZagCount;
+  //           }
+  //           ++zigZagCount;
+  //         }
+  //       }
+        
+  //       result[i] = j < i ?i-j: j-i;
+  //       ++i;
+  //     }while(i < sLength);
+  //   }
+  //   return result;
+  // }
 
   function runTest() external view returns(bool){
     return(keccak256(abi.encodePacked(algorithm(str))) == keccak256(abi.encodePacked(expected)));
