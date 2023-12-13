@@ -26,7 +26,7 @@ import "forge-std/console.sol";
 * - Post your result on Twitter and tag the challenge @author @SolContractADay.
 *
 * @author Carson Case         [carsonpcase@gmail.com]
-* Score:                      [599,967]
+* Score:                      [537,428]
 */
 contract DistanceToNearestVowelV1 {
 
@@ -52,73 +52,80 @@ contract DistanceToNearestVowelV1 {
   function algorithm(string memory _str) internal view returns(uint[] memory){
     bytes memory s = bytes(_str);
     uint sLength = s.length;
+    uint sLengthMinus1 = s.length-1;
     uint[] memory result = new uint[](sLength);
     uint x;
     uint y;
 
-    // first step. If the first character isn't a vowel, count down to the first vowel from the start
-    if(isNotVowel(s[x])){
-      // find the first vowel with y
-      do{
-        ++y;
-      }while(isNotVowel(s[y]));
+    unchecked{
+      // first step. If the first character isn't a vowel, count down to the first vowel from the start
+      if(isNotVowel(s[x])){
+        // find the first vowel with y
+        do{
+          ++y;
+        }while(isNotVowel(s[y]));
 
-      // count x down from y until x = y
-      while(x < y){
-        result[x] = y - x;
-        ++x;
+        // count x down from y until x = y
+        while(x < y){
+          result[x] = y - x;
+          ++x;
+        }
       }
-    }
 
-    // Do algorithm until we get to the end of the array
-    do{
-      // First find the next y or end of the array
+      // Do algorithm until we get to the end of the array
       do{
-        if(y < sLength-1){
-           ++y;
-        }else{
+        // First find the next y or end of the array
+        do{
+          if(y < sLengthMinus1){
+            ++y;
+          }else{
+            break;
+          }
+        }while(isNotVowel(s[y]));
+        
+        // if y has reached the end of the array, count upwards from the last vowel and break
+        if(y == sLengthMinus1){
+          uint c;
+          do{
+          result[++x] = ++c;
+          }while(x < y);
+          
           break;
         }
-      }while(isNotVowel(s[y]));
-      
-      // if y has reached the end of the array, count upwards from the last vowel and break
-      if(y == sLength - 1){
-        uint c;
+
+        // find distance
+        uint d = y - x;
+        uint D = d/2;
+
+        // set x to 0
+        result[x] = 0;
+
+        // Count all the distance starting from step 1 after x
+        uint i = 1;
         do{
-        result[++x] = ++c;
-        }while(x < y);
-        
-        break;
-      }
+          
+          if(i > D){
+            // if > half distance count down
+            result[x+i] = result[x+i-1]-1;
+          }else{
+            // if less than, = half distance, count up
+            result[x+i] = i;
+          }
+          // if equal to half distance on an odd distance, place the next element as the same distance
+          if (i == D && d % 2 == 1){
+            i++;
+            result[x+i] = D;
+          }
+          ++i;
+        }while(i < d);
 
-      // find distance
-      uint d = y - x;
-      uint D = d/2;
+        // next x is this y
+        x = y;
 
-      // set x to 0
-      result[x] = 0;
+      // end if x becomes the length
+      }while(x < sLengthMinus1);
+    }
 
-      // Count all the distance starting from step 1 after x
-      for(uint i=1; i < d; ++i){
-        // if less than, = half distance, count up
-        if(i <= D){
-          result[x+i] = i;
-        // if > half distance count down
-        }else{
-          result[x+i] = result[x+i-1]-1;
-        }
-        // if equal to half distance on an odd distance, place the next element as the same distance
-        if (d % 2 == 1 && i == D){
-          i++;
-          result[x+i] = D;
-        }
-      }
-
-      // next x is this y
-      x = y;
-
-    // end if x becomes the length
-    }while(x < sLength-1);
 
     return result;
   }
